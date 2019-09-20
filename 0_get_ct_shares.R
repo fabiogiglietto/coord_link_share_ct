@@ -50,7 +50,7 @@ for (i in 1:nrow(urls)) {
       print(paste("Error: ", message(cond), " on URL: ", i))
     },
     finally={
-      Sys.sleep(0.25)
+      Sys.sleep(1) # can be lowered depending on the assigned API rate limit
     })
 }
 

@@ -95,4 +95,16 @@ g <- graph_from_adjacency_matrix(adjmatrix = g,
 
 write.graph(g,"./data/g.graphml",format = "graphml") # save the full graph
 
+# keep only highly coordinated entities
+V(g)$degree <- degree(g)
+q <- quantile(E(g)$weight, 0.90) # set the thresold number of repetedly coordinated link sharing to keep 
+g <- induced_subgraph(graph = g, vids = V(g)[V(g)$degree > 0 ]) # filter for degree
+g <- subgraph.edges(g,eids = which(E(g)$weight >=  q),delete.vertices = T) # filter for edge weight
+# find and annotate nodes-components
+V(g)$component <- components(g)$membership
+
+write.graph(g,"./data/coordinated_g.graphml", format = "graphml") # save graph of coordinated entities
+coordinated_entities <- igraph::as_data_frame(g, "vertices")
+write.csv(coordinated_entities, file = "./data/coordinated_entities.csv", row.names = F) # save for further analysis
+
 rm(list = ls())

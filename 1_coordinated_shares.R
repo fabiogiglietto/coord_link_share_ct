@@ -81,13 +81,20 @@ rm(datalist)
 
 saveRDS(df, file = "./data/coordinated_shares.rds")
 
-# create an adjacence matrix from the list of pages in each df row
-b <- unique(unlist(df$account.platformId))
-d <- unlist(sapply(df$account.platformId,combn,2,toString))
-e <- data.frame(table(factor(d,c(paste(b,b,sep=','),combn(b,2,toString)))))
-f <- read.table(text = do.call(paste,c(sep =',', e)),sep=',',strip.white = T)
-g <- xtabs(V3~V1+V2,f)
-g[lower.tri(g)] = t(g)[lower.tri(g)]
+el2 <- df[,c(3,5)] #drop unnecesary columns
+el <- separate_rows(el2,"account.platformId",sep = ",") #divide platforms.ids onver multiple rows
+el$account.platformId <- trimws(el$account.platformId) #Remove white space from platform.id
+v1 <- data.frame(node=unique(el$account.platformId), type=1) #create a dataframe with nodes and type 0=url 1=page
+v2 <- data.frame(node=unique(el$url), type=0)
+v <- rbind(v1,v2)
+rm(v1,v2) #clear
+
+g2.bp <- graph.data.frame(el,directed = T,vertices = v) #makes the biap
+g2.bp <- simplify(g2.bp,remove.multiple = T,remove.loops = T) #simply the bipartite netwrok to avoid problems with resulting edge weight in projected network
+g <- bipartite.projection(g2.bp,multiplicity = T)$proj2 #project page-page network
+
+# cleanup
+rm(g2.bp, el, el2, v)
 
 g <- graph_from_adjacency_matrix(adjmatrix = g,
                                  weighted = TRUE,

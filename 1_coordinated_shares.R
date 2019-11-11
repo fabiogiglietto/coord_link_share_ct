@@ -1,9 +1,8 @@
 library(lubridate)
 library(data.table)
 library(igraph)
-library(dplyr)
-library(tidyr)
 library(stringr)
+library(tidyverse)
 
 setwd("~/coord_link_share_ct/")
 

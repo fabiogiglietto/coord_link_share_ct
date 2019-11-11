@@ -12,7 +12,7 @@ dir.create("data", showWarnings = F)
 urls <- readRDS("./rawdata/urls.rds")
 
 # Get my token
-api_key <- URLencode("") # add api key here
+api_key <- URLencode("") # add api token here
 
 ct_shares.df <- NULL
 

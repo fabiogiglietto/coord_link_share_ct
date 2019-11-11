@@ -96,10 +96,6 @@ g <- bipartite.projection(g2.bp,multiplicity = T)$proj2 #project page-page netwo
 # cleanup
 rm(g2.bp, el, el2, v)
 
-g <- graph_from_adjacency_matrix(adjmatrix = g,
-                                 weighted = TRUE,
-                                 mode="undirected")
-
 write.graph(g,"./data/g.graphml",format = "graphml") # save the full graph
 
 # keep only highly coordinated entities

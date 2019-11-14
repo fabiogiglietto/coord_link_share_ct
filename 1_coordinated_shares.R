@@ -4,11 +4,10 @@ library(igraph)
 library(stringr)
 library(tidyverse)
 
-setwd("~/coord_link_share_ct/")
 
 estimate_coord_interval <- function(ct_shares.dt) {
   setkey(ct_shares.dt, expanded) # key to improve performances
-  setkey(ct_shares.dt, platformId) # key to improve performances
+  setkey(ct_shares.dt, account.url) # key to improve performances
   setkey(ct_shares.dt, date) # key to improve performances
   
   ct_shares.dt <- ct_shares.dt[order(date),] # sort by date
@@ -64,7 +63,7 @@ for (i in 1:nrow(URLs)) {
   url <- URLs$URL[i]
   temp <- subset(ct_shares.dt, ct_shares.dt$expanded==url)
   # subset temp (all shares of one URL) by time published by differnet entities in a coordination.interval
-  dat.summary <- setDT(temp)[ , list(count=.N, account.platformId=list(account.platformId), share_date=list(date)), by=cut(as.POSIXct(date), coordination.interval)]
+  dat.summary <- setDT(temp)[ , list(count=.N, account.url=list(account.url), share_date=list(date)), by=cut(as.POSIXct(date), coordination.interval)]
   # avoid adding empty dataframes to datalist
   dat.summary <- subset(dat.summary, dat.summary$count>1)
   
@@ -80,20 +79,47 @@ rm(datalist)
 
 saveRDS(df, file = "./data/coordinated_shares.rds")
 
-el2 <- df[,c(3,5)] #drop unnecesary columns
-el <- separate_rows(el2,"account.platformId",sep = ",") #divide platforms.ids onver multiple rows
-el$account.platformId <- trimws(el$account.platformId) #Remove white space from platform.id
-v1 <- data.frame(node=unique(el$account.platformId), type=1) #create a dataframe with nodes and type 0=url 1=page
+el2 <- df[,c(3,5)] # drop unnecesary columns
+el <- unnest(el2) # divide platforms.ids over multiple rows
+el$account.url <- trimws(el$account.url) # remove white space from platform.id
+v1 <- data.frame(node=unique(el$account.url), type=1) # create a dataframe with nodes and type 0=url 1=page
 v2 <- data.frame(node=unique(el$url), type=0)
 v <- rbind(v1,v2)
 rm(v1,v2) #clear
 
-g2.bp <- graph.data.frame(el,directed = T,vertices = v) #makes the biap
-g2.bp <- simplify(g2.bp,remove.multiple = T,remove.loops = T) #simply the bipartite netwrok to avoid problems with resulting edge weight in projected network
-g <- bipartite.projection(g2.bp,multiplicity = T)$proj2 #project page-page network
+g2.bp <- graph.data.frame(el,directed = T,vertices = v) # makes the biap
+g2.bp <- igraph::simplify(g2.bp, remove.multiple = T, remove.loops = T) # simply the bipartite netwrok to avoid problems with resulting edge weight in projected network
+g <- bipartite.projection(g2.bp, multiplicity = T)$proj2 # project page-page network
 
 # cleanup
 rm(g2.bp, el, el2, v)
+
+# get a list of unique entities (pages/groups/verified profiles/instagram accounts)
+account.info <- ct_shares.dt[, .(shares = .N,
+                                 avg.account.subscriberCount=mean(account.subscriberCount)),
+                             by = list(account.url)]
+
+more.account.info <- ct_shares.dt[, grepl("account.", colnames(ct_shares.dt)), with=FALSE]
+more.account.info$account.subscriberCount <- NULL
+
+account.info <- more.account.info[account.info,
+                                  mult = "first",
+                                  on = "account.url",
+                                  nomatch=0L,]
+
+saveRDS(account.info, file = "./data/all_ct_entities.rds") # save output before subsetting
+
+# add vertex attributes
+all_entities.dt <- as.data.table(readRDS("./data/ct_shares.df.rds"))
+
+vertex.info <- subset(account.info, as.character(account.info$account.url) %in% V(g)$name)
+
+V(g)$shares <- sapply(V(g)$name, function(x) vertex.info$shares[vertex.info$account.url == x])
+V(g)$avg.account.subscriberCount <- sapply(V(g)$name, function(x) vertex.info$avg.account.subscriberCount[vertex.info$account.url == x]) 
+V(g)$account.platform <- sapply(V(g)$name, function(x) vertex.info$account.platform[vertex.info$account.url == x]) 
+V(g)$account.name <- sapply(V(g)$name, function(x) vertex.info$account.name[vertex.info$account.url == x]) 
+V(g)$account.verified <- sapply(V(g)$name, function(x) vertex.info$account.verified[vertex.info$account.url == x]) 
+V(g)$account.handle <- sapply(V(g)$name, function(x) vertex.info$account.handle[vertex.info$account.url == x]) 
 
 write.graph(g,"./data/g.graphml",format = "graphml") # save the full graph
 

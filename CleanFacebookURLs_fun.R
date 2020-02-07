@@ -43,8 +43,7 @@ CleanFacebookURLs <- function(dataset, URLcolumn) {
   dataset$domain <- url_parse(dataset[, URLcolumn])$domain
   dataset$domain  <- gsub(".*https://|.*http://|.*www.", "", dataset$domain) # remove www or http to "normalize" the URLcolumns
   dataset <- dataset[dataset[, URLcolumn]!=dataset$domain,]
-  dataset$domain[dataset$domain=="digiunopersalvini.it_exception"] <- "digiunopersalvini.it" # restore domains
-  
+
   # remove possible rows with empty field URLcolumn 
   dataset <- dataset[!is.na(dataset[, URLcolumn]),]
   

@@ -12,7 +12,7 @@ dir.create("data", showWarnings = F)
 urls <- readRDS("./rawdata/urls.rds")
 
 # Get my token
-api_key <- URLencode("") # add api token here
+api_key <- Sys.getenv("CT_API_TOKEN") # add api token to your .Renviron file and restart R
 
 ct_shares.df <- NULL
 

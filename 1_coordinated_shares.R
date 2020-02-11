@@ -4,7 +4,6 @@ library(igraph)
 library(stringr)
 library(tidyverse)
 
-
 estimate_coord_interval <- function(ct_shares.dt) {
   setkey(ct_shares.dt, expanded) # key to improve performances
   setkey(ct_shares.dt, account.url) # key to improve performances

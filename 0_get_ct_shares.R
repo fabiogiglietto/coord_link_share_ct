@@ -54,7 +54,7 @@ for (i in 1:nrow(urls)) {
     })
 }
 
-ct_shares.df <- ct_shares.df[-which(ct_shares.df$expandedLinks == "NULL"), ] # remove shares with expandedLinks is NULL
+# ct_shares.df <- ct_shares.df[-which(ct_shares.df$expandedLinks == "NULL"), ] # remove shares with expandedLinks is NULL
 ct_shares.df <- unnest(ct_shares.df, ct_shares.df$expandedLinks) # unnest expanded_url list and creates original and expanded (URL) fields
 ct_shares.df <- ct_shares.df[!duplicated(ct_shares.df[,c("id", "platformId", "postUrl", "expanded")]),] # remove exact duplicates created by the unnesting
 ct_shares.df$original <- NULL # remove "original" unshortnen URL
